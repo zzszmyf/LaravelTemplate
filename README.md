@@ -1,0 +1,2 @@
+# LaravelTemplate
+Laravel Project Template
