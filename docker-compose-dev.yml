@@ -1,0 +1,46 @@
+version: "3.3"
+services:
+  composer:
+    image: composer:latest
+    container_name: composer
+    working_dir: /var/www/laravel
+    command: /bin/bash -c "composer update; composer install; composer require laravel/ui;composer require lcobucci/jwt;php artisan key:generate"
+    volumes:
+      - ./laravel:/var/www
+  app:
+    build:
+      args:
+        user: work
+        uid: 1000
+      context: ./
+      dockerfile: dockerfile
+    container_name: ${PHP_CONTAINER_NAME}
+    depends_on:
+        - composer
+    restart: unless-stopped
+    working_dir: /var/www/laravel
+    env_file:
+        - ./env/docker.env
+    volumes:
+      - /var/lib/mysql:/var/lib/mysql
+      - ./laravel:/var/www
+  node:
+    image: node:12.22.3-alpine3.13
+    container_name: node_env
+    working_dir: /var/www/
+    command: /bin/sh -c "npm install; npm run production"
+    volumes:
+      - ./laravel:/var/www
+  nginx:
+    image: nginx:alpine
+    container_name: ${NGINX_CONTAINER_NAME}
+    depends_on:
+        - composer
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    env_file:
+      - ./env/docker.env
+    volumes:
+      - ./laravel:/var/www
+      - ./docker_compose/nginx:/etc/nginx/conf.d/
